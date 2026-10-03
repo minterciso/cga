@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "utils.h"
+#include "params.h"
 
 void createRandomLattices(Individual *ind)
 {
@@ -45,7 +46,7 @@ void createRandomRules(Individual *ind)
   ind->rule[RULE_SIZE-1]='\0';
   for(i=0;i<RULE_SIZE;i++)
   {
-    rnd = uniformDeviate(rand())*MODE;
+    rnd = uniformDeviate(rand())*params.mode;
     switch(rnd)
     {
       case 0:ind->rule[i]='0';break;
@@ -98,7 +99,7 @@ void executeCA(Lattice *lat, char *rule, int ind_idx,int th_idx)
       }
       bin[RADIUS*2+1]='\0';
       idx = bin2dec(bin,RADIUS*2+1);
-      if(idx>=0 && idx<LAT_SIZE)
+      if(idx>=0 && idx<RULE_SIZE)
         res[j] = rule[idx];
       else
       {

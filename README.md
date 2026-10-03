@@ -18,4 +18,11 @@ cmake --build build
 ./build/cga
 ```
 
-Compile-time switches (`DEBUG`, `VALIDATE`, `USE_BEST`, `F_OUTPUT`) live in `src/consts.h`. With `DEBUG` enabled the program writes into `logs/` relative to the working directory, so create it first.
+Mutation rate, crossover rate and mode are runtime options:
+
+```sh
+./build/cga --mutation-rate 0.016 --crossover-rate 10 --mode 2
+./build/cga --help
+```
+
+The other compile-time switches (`DEBUG`, `VALIDATE`, `USE_BEST`, `F_OUTPUT`) live in `src/consts.h`. With `DEBUG` enabled the program writes into `logs/` relative to the working directory, so create it first.

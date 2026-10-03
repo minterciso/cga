@@ -9,6 +9,7 @@
 #include "consts.h"
 #include "utils.h"
 #include "structs.h"
+#include "params.h"
 
 void *start_threads(void *individual)
 {
@@ -24,6 +25,16 @@ int main(int argc, char *argv[])
   Individual population[POPULATION];
   pthread_t threads[1];
   int i,j;
+
+  switch(parseParams(argc,argv))
+  {
+    case 1:  return EXIT_SUCCESS;
+    case -1: return EXIT_FAILURE;
+  }
+  printParams(stderr);
+  if(params.mode==3)
+    fprintf(stderr,"Warning: mode 3 puts '2' symbols in the rule, which the CA copies into the lattice; "
+                   "this is not the template-based ternary representation and will most likely abort.\n");
 
   srand(timeSeed());
   /*

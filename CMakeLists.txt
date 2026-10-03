@@ -15,6 +15,7 @@ add_executable(cga
     src/ca.c
     src/cga.c
     src/utils.c
+    src/params.c
 )
 
 # Same flags the original autotools build used (src/Makefile.am).

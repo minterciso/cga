@@ -5,6 +5,7 @@
 #include "consts.h"
 #include "ca.h"
 #include "utils.h"
+#include "params.h"
 
 void evolve(Individual *pop)
 {
@@ -78,7 +79,7 @@ void crossOver(Individual *pop)
     //Select the crossover point
     for(j=0;j<RULE_SIZE;j++)
     {
-      if( (uniformDeviate(rand()) * 100) <= CROSS_RATE )
+      if( (uniformDeviate(rand()) * 100) < params.cross_rate )
       {
         point = j;
         break;
@@ -122,8 +123,12 @@ void mutate(Individual *pop, size_t amount)
     for(j=0;j<RULE_SIZE;j++)
     {
       rnd = uniformDeviate(rand());
-      if(rnd <= MUT_RATE)
-        pop[i].rule[j]=(pop[i].rule[j]=='0'?'1':'0');
+      if(rnd < params.mut_rate)
+      {
+        //Change to one of the other (mode-1) symbols, uniformly; a plain flip in binary mode
+        int shift = 1 + (int)(uniformDeviate(rand())*(params.mode-1));
+        pop[i].rule[j] = '0' + ((pop[i].rule[j]-'0') + shift) % params.mode;
+      }
     }
   }
 }
