@@ -88,6 +88,24 @@ void bin2hex(char *hex, char *bin, int h_size, int b_size)
   }
 }
 
+void ruleToDecimal(const char *rule, char *out)
+{
+  unsigned __int128 v = 0;
+  char tmp[RULE_DEC_SIZE];
+  int k,n=0;
+
+  for(k=RULE_SIZE-1;k>=0;k--)
+    v = (v<<1) | (rule[k]=='1');
+  do
+  {
+    tmp[n++] = '0' + (int)(v%10);
+    v /= 10;
+  }while(v>0);
+  for(k=0;k<n;k++)
+    out[k] = tmp[n-1-k];
+  out[n] = '\0';
+}
+
 int timeSeed(void)
 {
   time_t now = time (NULL);

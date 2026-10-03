@@ -4,22 +4,31 @@
 #include <getopt.h>
 #include <limits.h>
 #include <errno.h>
+#include <string.h>
 #include "consts.h"
 #include "utils.h"
 
-Params params = { DEFAULT_MUT_RATE, DEFAULT_CROSS_RATE, DEFAULT_N_SYMBOLS, 0 };
+Params params = { DEFAULT_MUT_RATE, DEFAULT_CROSS_RATE, REP_BINARY, DEFAULT_T_MAX, DEFAULT_HASH_PROB, 0 };
+
+static const char *REP_NAMES[] = { "binary", "single", "double" };
 
 static void usage(FILE *stream, const char *prog)
 {
   fprintf(stream,
           "Usage: %s [options]\n"
-          "  -m, --mutation-rate R   per-bit mutation probability in [0,1] (default %g)\n"
-          "  -c, --crossover-rate R  single point crossover probability p_c in [0,1]\n"
+          "  -m, --mutation-rate R   per-symbol mutation probability in [0,1] (default %g)\n"
+          "  -c, --crossover-rate R  crossover probability p_c in [0,1]\n"
           "                          (default %g; MCH uses 0.8, CMD 1.0)\n"
-          "  -n, --symbols N         number of rule symbols: 2 = binary, 3 = ternary (default %d)\n"
+          "  -r, --representation S  binary, single or double (default binary).\n"
+          "                          single/double use ternary templates with single or\n"
+          "                          double orientation\n"
+          "  -t, --t-max N           maximum initial templates per individual, 0..%d\n"
+          "                          (default %d)\n"
+          "  -p, --hash-prob P       probability of '#' in each template cell, in [0,1]\n"
+          "                          (default %g)\n"
           "  -s, --seed N            random seed, 0..%u (default: derived from the clock)\n"
           "  -h, --help              show this help\n",
-          prog, DEFAULT_MUT_RATE, DEFAULT_CROSS_RATE, DEFAULT_N_SYMBOLS, UINT_MAX);
+          prog, DEFAULT_MUT_RATE, DEFAULT_CROSS_RATE, MAX_TEMPLATES, DEFAULT_T_MAX, DEFAULT_HASH_PROB, UINT_MAX);
 }
 
 static int parseDouble(const char *s, double min, double max, double *out)
@@ -52,16 +61,18 @@ int parseParams(int argc, char *argv[])
   {
     {"mutation-rate",  required_argument, NULL, 'm'},
     {"crossover-rate", required_argument, NULL, 'c'},
-    {"symbols",        required_argument, NULL, 'n'},
+    {"representation", required_argument, NULL, 'r'},
+    {"t-max",          required_argument, NULL, 't'},
+    {"hash-prob",      required_argument, NULL, 'p'},
     {"seed",           required_argument, NULL, 's'},
     {"help",           no_argument,       NULL, 'h'},
     {NULL, 0, NULL, 0}
   };
-  int opt;
+  int opt,i;
   int seed_set = 0;
-  double v;
+  unsigned int u;
 
-  while((opt = getopt_long(argc, argv, "m:c:n:s:h", opts, NULL)) != -1)
+  while((opt = getopt_long(argc, argv, "m:c:r:t:p:s:h", opts, NULL)) != -1)
   {
     switch(opt)
     {
@@ -79,13 +90,29 @@ int parseParams(int argc, char *argv[])
           return -1;
         }
         break;
-      case 'n':
-        if(parseDouble(optarg, 2.0, 3.0, &v) != 0 || (v != 2.0 && v != 3.0))
+      case 'r':
+        for(i=0;i<3 && strcmp(optarg, REP_NAMES[i])!=0;i++);
+        if(i == 3)
         {
-          fprintf(stderr, "Invalid number of symbols '%s': expected 2 or 3\n", optarg);
+          fprintf(stderr, "Invalid representation '%s': expected binary, single or double\n", optarg);
           return -1;
         }
-        params.n_symbols = (int)v;
+        params.representation = (Representation)i;
+        break;
+      case 't':
+        if(parseUInt(optarg, &u) != 0 || u > MAX_TEMPLATES)
+        {
+          fprintf(stderr, "Invalid t-max '%s': expected an integer in [0,%d]\n", optarg, MAX_TEMPLATES);
+          return -1;
+        }
+        params.t_max = (int)u;
+        break;
+      case 'p':
+        if(parseDouble(optarg, 0.0, 1.0, &params.hash_prob) != 0)
+        {
+          fprintf(stderr, "Invalid hash probability '%s': expected a number in [0,1]\n", optarg);
+          return -1;
+        }
         break;
       case 's':
         if(parseUInt(optarg, &params.seed) != 0)
@@ -116,6 +143,9 @@ int parseParams(int argc, char *argv[])
 
 void printParams(FILE *stream)
 {
-  fprintf(stream, "mutation-rate=%g crossover-rate=%g symbols=%d seed=%u\n",
-          params.mut_rate, params.cross_rate, params.n_symbols, params.seed);
+  fprintf(stream, "mutation-rate=%g crossover-rate=%g representation=%s",
+          params.mut_rate, params.cross_rate, REP_NAMES[params.representation]);
+  if(params.representation != REP_BINARY)
+    fprintf(stream, " t-max=%d hash-prob=%g", params.t_max, params.hash_prob);
+  fprintf(stream, " seed=%u\n", params.seed);
 }

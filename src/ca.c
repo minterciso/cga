@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "utils.h"
-#include "params.h"
 
 void createRandomLattices(Individual *ind)
 {
@@ -46,12 +45,11 @@ void createRandomRules(Individual *ind)
   ind->rule[RULE_SIZE-1]='\0';
   for(i=0;i<RULE_SIZE;i++)
   {
-    rnd = uniformDeviate(rand())*params.n_symbols;
+    rnd = uniformDeviate(rand())*2;
     switch(rnd)
     {
       case 0:ind->rule[i]='0';break;
       case 1:ind->rule[i]='1';break;
-      case 2:ind->rule[i]='2';break;
     }
   }
 }

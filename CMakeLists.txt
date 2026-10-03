@@ -10,17 +10,24 @@ set(CMAKE_C_EXTENSIONS ON)
 
 find_package(Threads REQUIRED)
 
-add_executable(cga
-    src/main.c
+add_library(cga_core STATIC
     src/ca.c
     src/cga.c
     src/utils.c
     src/params.c
+    src/templates.c
 )
-
+target_include_directories(cga_core PUBLIC src)
 # Same flags the original autotools build used (src/Makefile.am).
-target_compile_options(cga PRIVATE -O1 -ggdb -g3)
+target_compile_options(cga_core PUBLIC -O1 -ggdb -g3)
+target_link_libraries(cga_core PUBLIC m Threads::Threads)
 
-target_link_libraries(cga PRIVATE m Threads::Threads)
+add_executable(cga src/main.c)
+target_link_libraries(cga PRIVATE cga_core)
+
+enable_testing()
+add_executable(test_templates tests/test_templates.c)
+target_link_libraries(test_templates PRIVATE cga_core)
+add_test(NAME templates COMMAND test_templates)
 
 install(TARGETS cga RUNTIME DESTINATION bin)

@@ -6,6 +6,7 @@
 #include "ca.h"
 #include "utils.h"
 #include "params.h"
+#include "templates.h"
 
 void evolve(Individual *pop)
 {
@@ -23,6 +24,8 @@ void evolve(Individual *pop)
     fprintf(stderr,"Run %3d:",r);
     for(i=0;i<POPULATION;i++)
     {
+      if(params.representation!=REP_BINARY)
+        decodeTemplates(&pop[i]);
       pop[i].fitness=0;
       for(j=0;j<MAX_LATS;j++)
       {
@@ -65,20 +68,28 @@ void crossOver(Individual *pop)
   int rest = (POPULATION-1)-CROSS_AMOUNT;
   int point = 0; //Crossover point
   int i,k;
+  int with_tpl = 0; //Elite individuals that have at least one template
 #ifdef DEBUG
   FILE *fp = fopen("logs/crossover.log","w+");
   fprintf(fp,"Crossing over...\n");
 #endif
+  for(i=rest;i<POPULATION;i++)
+    if(pop[i].n_tpl>0)
+      with_tpl++;
   k=0;
   for(i=0;i<rest;i+=2)
   {
-    //Select 2 fathers from the 20 best individuals for crossing
-    f1_idx = rest + uniformDeviate(rand()) * (POPULATION - rest);
-    f2_idx = rest + uniformDeviate(rand()) * (POPULATION - rest);
+    //Select 2 fathers from the 20 best individuals for crossing. With templates, both
+    //need at least one template, otherwise another pair is drawn (if any pair can qualify)
+    do
+    {
+      f1_idx = rest + uniformDeviate(rand()) * (POPULATION - rest);
+      f2_idx = rest + uniformDeviate(rand()) * (POPULATION - rest);
+    }while(params.representation!=REP_BINARY && with_tpl>0 && (pop[f1_idx].n_tpl==0 || pop[f2_idx].n_tpl==0));
 
     //Single point crossover with probability p_c, cut point uniform in [1,RULE_SIZE-1].
     //point=0 means no crossover: the sons are copies of the fathers.
-    if(uniformDeviate(rand()) < params.cross_rate)
+    if(params.representation==REP_BINARY && uniformDeviate(rand()) < params.cross_rate)
       point = 1 + uniformDeviate(rand()) * (RULE_SIZE-1);
     else
       point = 0;
@@ -96,6 +107,11 @@ void crossOver(Individual *pop)
     memcpy(&son1.rule[point],&fat1.rule[point],RULE_SIZE-point);
     memcpy(&son2.rule,       &fat1.rule,       point);
     memcpy(&son2.rule[point],&fat2.rule[point],RULE_SIZE-point);
+
+    //With templates, crossover (probability p_c) swaps one template between the sons
+    if(params.representation!=REP_BINARY && son1.n_tpl>0 && son2.n_tpl>0 &&
+       uniformDeviate(rand()) < params.cross_rate)
+      swapTemplates(&son1,&son2);
 
     //Set the sons index
     s1_idx = k++;
@@ -121,15 +137,16 @@ void mutate(Individual *pop, size_t amount)
   double rnd=0.0;
   for(i=0;i<amount;i++)
   {
+    if(params.representation!=REP_BINARY)
+    {
+      mutateTemplates(&pop[i]);
+      continue;
+    }
     for(j=0;j<RULE_SIZE;j++)
     {
       rnd = uniformDeviate(rand());
       if(rnd < params.mut_rate)
-      {
-        //Change to one of the other (n_symbols-1) symbols, uniformly; a plain flip when binary
-        int shift = 1 + (int)(uniformDeviate(rand())*(params.n_symbols-1));
-        pop[i].rule[j] = '0' + ((pop[i].rule[j]-'0') + shift) % params.n_symbols;
-      }
+        pop[i].rule[j]=(pop[i].rule[j]=='0'?'1':'0');
     }
   }
 }

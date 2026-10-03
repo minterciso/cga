@@ -5,12 +5,21 @@
 
 //Runtime parameters. Filled once by parseParams() before any thread starts,
 //read-only afterwards.
+typedef enum Representation
+{
+  REP_BINARY, //128-bit rule string
+  REP_SINGLE, //Templates, orientation always '1'
+  REP_DOUBLE  //Templates, random orientation per individual
+}Representation;
+
 typedef struct Params
 {
-  double mut_rate;   //Per-bit mutation probability [0,1]
-  double cross_rate; //Single point crossover probability p_c [0,1]
-  int n_symbols;     //Number of rule symbols: 2 (binary) or 3 (ternary)
-  unsigned int seed; //srand() seed; taken from the clock unless --seed is given
+  double mut_rate;               //Per-symbol mutation probability [0,1]
+  double cross_rate;             //Crossover probability p_c [0,1]
+  Representation representation;
+  int t_max;                     //Maximum initial templates per individual [0,MAX_TEMPLATES]
+  double hash_prob;              //Probability of '#' in each template cell [0,1]
+  unsigned int seed;             //srand() seed; taken from the clock unless --seed is given
 }Params;
 
 extern Params params;

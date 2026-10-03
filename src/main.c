@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "structs.h"
 #include "params.h"
+#include "templates.h"
 
 void *start_threads(void *individual)
 {
@@ -32,9 +33,6 @@ int main(int argc, char *argv[])
     case -1: return EXIT_FAILURE;
   }
   printParams(stderr);
-  if(params.n_symbols==3)
-    fprintf(stderr,"Warning: 3 symbols puts '2' symbols in the rule, which the CA copies into the lattice; "
-                   "this is not the template-based ternary representation and will most likely abort.\n");
 
   srand(params.seed);
   /*
@@ -54,7 +52,13 @@ int main(int argc, char *argv[])
     population[i].rule[RULE_SIZE]='\0';
 #endif
 #ifndef USE_BEST
-    createRandomRules(&population[i]);
+    if(params.representation==REP_BINARY)
+      createRandomRules(&population[i]);
+    else
+    {
+      createRandomTemplates(&population[i]);
+      decodeTemplates(&population[i]);
+    }
 #endif
   }
 
@@ -83,6 +87,20 @@ int main(int argc, char *argv[])
   {
     pthread_join(threads[i],NULL);
 //    fprintf(fp,"%d,%s,%d",i,population[POPULATION-1].rule,population[POPULATION-1].fitness);
+  }
+
+  //The population is ranked at the last generation and the elite is never altered
+  //afterwards, so the last individual is the best one found
+  char rule_dec[RULE_DEC_SIZE];
+  Individual *best = &population[POPULATION-1];
+  ruleToDecimal(best->rule,rule_dec);
+  fprintf(stderr,"Best rule: %s (fitness %u)\n",rule_dec,best->fitness);
+  if(params.representation!=REP_BINARY)
+  {
+    fprintf(stderr,"Templates (orientation %c):",best->orientation);
+    for(i=0;i<best->n_tpl;i++)
+      fprintf(stderr," %.*s",NEIGH_SIZE,best->tpl[i].cells);
+    fprintf(stderr,"\n");
   }
   /*
   //Call GA (and output to a DB)

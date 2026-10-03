@@ -18,11 +18,16 @@ cmake --build build
 ./build/cga
 ```
 
-Mutation rate, crossover rate, number of rule symbols and random seed are runtime options. The seed in use is printed at startup, so any run can be repeated:
+Mutation rate, crossover rate, rule representation and random seed are runtime options. The parameters and seed in use are printed at startup, so any run can be repeated; the best rule found is printed at the end as a decimal rule number (same numbering as the paper):
 
 ```sh
-./build/cga --mutation-rate 0.016 --crossover-rate 1.0 --symbols 2 --seed 42
+./build/cga --mutation-rate 0.016 --crossover-rate 1.0 --seed 42
+./build/cga --representation single --t-max 9 --hash-prob 0.2857 --seed 42
 ./build/cga --help
 ```
+
+`--representation` selects the plain 128-bit rule string (`binary`) or the ternary template representation from the paper, with `single` or `double` orientation. Templates are 7-cell strings over `{0,1,#}`; a neighbourhood matched by any template maps to the individual's orientation bit, every other one to its complement. Crossover swaps one template between the two offspring and mutation moves a template cell to one of the other two symbols, so the number of templates of an individual never changes after creation.
+
+Run the tests with `ctest --test-dir build`.
 
 The other compile-time switches (`DEBUG`, `VALIDATE`, `USE_BEST`, `F_OUTPUT`) live in `src/consts.h`. With `DEBUG` enabled the program writes into `logs/` relative to the working directory, so create it first.
