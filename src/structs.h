@@ -18,7 +18,6 @@ typedef struct Individual
   Lattice lat[MAX_LATS];
   char rule[RULE_SIZE];
   unsigned int fitness;
-  pthread_t t_id;
   int id;
 }Individual;
 

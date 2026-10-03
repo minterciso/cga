@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
   //Individual population[POPULATION];
   ///Individual *population = NULL;
   Individual population[POPULATION];
-  pthread_t t_id;
+  pthread_t threads[1];
   int i,j;
 
   srand(timeSeed());
@@ -65,13 +65,12 @@ int main(int argc, char *argv[])
   //Now we run the threaded part
   for(i=0;i<1;i++)
   {
-    pthread_create(&t_id,NULL,&start_threads,&population);
-    population[i].t_id = t_id;
-    population[i].id = i;
+    population[i].id = i; //Set before the thread starts reading the population
+    pthread_create(&threads[i],NULL,&start_threads,&population);
   }
   for(i=0;i<1;i++)
   {
-    pthread_join(population[i].t_id,NULL);
+    pthread_join(threads[i],NULL);
 //    fprintf(fp,"%d,%s,%d",i,population[POPULATION-1].rule,population[POPULATION-1].fitness);
   }
   /*
