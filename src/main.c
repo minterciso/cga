@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
   }
   for(i=0;i<1;i++)
   {
-    pthread_join(population[i].t_id,(void**)&population);
+    pthread_join(population[i].t_id,NULL);
 //    fprintf(fp,"%d,%s,%d",i,population[POPULATION-1].rule,population[POPULATION-1].fitness);
   }
   /*

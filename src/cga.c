@@ -42,10 +42,10 @@ void evolve(Individual *pop)
     totFit/=(double)MAX_LATS;
     bubbleSort(pop);
 #ifdef F_OUTPUT
-    fprintf(fp,"[%3d](%.3f\%)\n",pop[POPULATION-1].fitness, totFit);
+    fprintf(fp,"[%3d](%.3f%%)\n",pop[POPULATION-1].fitness, totFit);
     fflush(fp);
 #endif
-    fprintf(stderr,"[%3d](%.3f\%)\n",pop[POPULATION-1].fitness, totFit);
+    fprintf(stderr,"[%3d](%.3f%%)\n",pop[POPULATION-1].fitness, totFit);
     if(r==GA_RUNS) return;
     crossOver(pop);
     mutate(pop,POPULATION-CROSS_AMOUNT);
@@ -123,7 +123,7 @@ void mutate(Individual *pop, size_t amount)
     {
       rnd = uniformDeviate(rand());
       if(rnd <= MUT_RATE)
-        pop[i].rule[j]=(pop[i].rule[j]=='0'?'1':'1');
+        pop[i].rule[j]=(pop[i].rule[j]=='0'?'1':'0');
     }
   }
 }
