@@ -34,6 +34,7 @@ Mutation rate, crossover rate, rule representation and random seed are runtime o
 ```sh
 ./build/cga --mutation-rate 0.016 --crossover-rate 1.0 --seed 42
 ./build/cga --generations 500 --seed 42
+./build/cga --seed 42 --csv evolution.csv   # per-generation fitness statistics, for plotting
 ./build/cga --representation single --t-max 9 --hash-prob 0.2857 --seed 42
 ./build/cga --help
 ```
