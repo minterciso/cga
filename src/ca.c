@@ -8,41 +8,48 @@
 void createRandomLattices(Individual *ind)
 {
   assert(ind!=NULL);
-  int i,j;
+  int j;
   int count=0;
   int rnd=0;
 
   for(j=0;j<MAX_LATS;j++)
   {
-    memset(ind->lat[j].cells,'0',LAT_SIZE);
-    ind->lat[j].cells[LAT_SIZE]='\0';
+    memset(ind->lat[j].cells,'0',LAT_SIZE); //We allways start with an empty Lattice
 #ifndef VALIDATE
-    ind->lat[j].density = uniformDeviate(rand())*(LAT_SIZE-1); //Density is [0-LAT_SIZE)
-#endif
-#ifdef VALIDATE
-    ind->lat[j].density = 90 + uniformDeviate(rand())*( 60 - 90); //Density is [0-LAT_SIZE)
-#endif
+    ind->lat[j].density = uniformDeviate(rand())*(LAT_SIZE+1); //Uniform distribution over [0,LAT_SIZE]
     count=0;
-    do
+    while(count < ind->lat[j].density)
     {
-      rnd = uniformDeviate(rand())*(LAT_SIZE-1); //Every cell has the same 1/(LAT_SIZE-1) prob of being setted
-      if(ind->lat[j].cells[rnd]!='1')
+      rnd = uniformDeviate(rand())*LAT_SIZE; //All cells have equal probability to be choosen
+      if(ind->lat[j].cells[rnd]=='0')
       {
         ind->lat[j].cells[rnd]='1';
         count++;
       }
-    }while(count <= ind->lat[j].density);      
-
+    }
+#endif
+#ifdef VALIDATE
+    //Unbiased distribution: each cell is 1 with probability 0.5, so the density is Binomial(LAT_SIZE,0.5)
+    count=0;
+    for(rnd=0;rnd<LAT_SIZE;rnd++)
+    {
+      if(uniformDeviate(rand()) < 0.5)
+      {
+        ind->lat[j].cells[rnd]='1';
+        count++;
+      }
+    }
+    ind->lat[j].density = count;
+#endif
   }
 }
 
 void createRandomRules(Individual *ind)
 {
-  int i,j;
+  int i;
   int rnd = 0;
 
   memset(ind->rule,'0',RULE_SIZE);
-  ind->rule[RULE_SIZE-1]='\0';
   for(i=0;i<RULE_SIZE;i++)
   {
     rnd = uniformDeviate(rand())*2;
@@ -54,7 +61,49 @@ void createRandomRules(Individual *ind)
   }
 }
 
-void executeCA(Lattice *lat, char *rule, int ind_idx,int th_idx)
+void createUnbiasedLattices(Lattice *lat, int n)
+{
+  int i,k;
+  for(i=0;i<n;i++)
+  {
+    lat[i].density = 0;
+    for(k=0;k<LAT_SIZE;k++)
+    {
+      lat[i].cells[k] = (uniformDeviate(rand()) < 0.5 ? '1' : '0');
+      if(lat[i].cells[k]=='1') lat[i].density++;
+    }
+  }
+}
+
+int classify(const Lattice *lat, const char *rule, int *fixed)
+{
+  int k,count = 0;
+  for(k=0;k<LAT_SIZE;k++)
+    if(lat->cells[k]=='1') count++;
+  //LAT_SIZE is odd, so density <= LAT_SIZE/2 means a majority of 0s
+  if(lat->density > LAT_SIZE/2 && count==LAT_SIZE)
+  {
+    *fixed = (rule[RULE_SIZE-1]=='1');
+    return 1;
+  }
+  if(lat->density <= LAT_SIZE/2 && count==0)
+  {
+    *fixed = (rule[0]=='0');
+    return 1;
+  }
+  *fixed = 0;
+  return 0;
+}
+
+//Lattice t uses rule t/latsPerRule (RULE_SIZE chars each)
+void cpuRunCA(Lattice *lat, const char *rules, int nLats, int latsPerRule)
+{
+  int t;
+  for(t=0;t<nLats;t++)
+    executeCA(&lat[t],&rules[(t/latsPerRule)*RULE_SIZE],t%latsPerRule,t/latsPerRule);
+}
+
+void executeCA(Lattice *lat, const char *rule, int ind_idx, int th_idx)
 {
   int dif = 0;
   int pos = 0;

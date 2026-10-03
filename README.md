@@ -33,6 +33,7 @@ Mutation rate, crossover rate, rule representation and random seed are runtime o
 
 ```sh
 ./build/cga --mutation-rate 0.016 --crossover-rate 1.0 --seed 42
+./build/cga --generations 500 --seed 42
 ./build/cga --representation single --t-max 9 --hash-prob 0.2857 --seed 42
 ./build/cga --help
 ```
@@ -40,4 +41,16 @@ Mutation rate, crossover rate, rule representation and random seed are runtime o
 `--representation` selects the plain 128-bit rule string (`binary`) or the ternary template representation from the paper, with `single` or `double` orientation. Templates are 7-cell strings over `{0,1,#}`; a neighborhood matched by any template maps to the individual's orientation bit, every other one to its complement. Crossover swaps one template between the two offspring and mutation moves a template cell to one of the other two symbols, so the number of templates of an individual never changes after creation.
 
 
+At the end of a run the best rule is evaluated on `--ics` (default 10⁴) unbiased ICs, each cell 1 with probability 0.5, as in the final evaluation of MCH/CMD. The last stdout line is
+
+```
+seed=42 train_best=62 rule=04de8db7fb77f5cbf66fcabfdfabd5ff nics=10000 perf=0.5048 perf_strict=0.5048
+```
+
+with the rule in hex, neighborhood `0000000` first (MCH/CMD order). `perf` counts a uniform correct lattice after the last step; `perf_strict` also requires that state to be a fixed point of the rule. `./build/cga --validate <hex>` evaluates a given rule without running the GA. The per-generation trace goes to `logs/output.log` (create `logs/` first).
+
 The other compile-time switches (`DEBUG`, `VALIDATE`, `USE_BEST`, `F_OUTPUT`) live in `src/consts.h`. With `DEBUG` enabled the program writes into `logs/` relative to the working directory, so create it first.
+
+## CPU and GPU versions
+
+[cuCGA](https://github.com/minterciso/cuCGA) is the CUDA version of this GA. Both share the same host code; only the CA backend differs (`src/backend_cpu.c` here, `src/kernel.cu` there, behind `src/backend.h`). For the same seed and options the two programs produce the same run, generation by generation.

@@ -16,6 +16,7 @@ add_library(cga_core STATIC
     src/utils.c
     src/params.c
     src/templates.c
+    src/backend_cpu.c
 )
 target_include_directories(cga_core PUBLIC src)
 # Same flags the original autotools build used (src/Makefile.am).

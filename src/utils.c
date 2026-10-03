@@ -4,6 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+#include <time.h>
 
 void dec2bin(int decimal, char *bin, int size)
 {
@@ -104,6 +105,17 @@ void ruleToDecimal(const char *rule, char *out)
   for(k=0;k<n;k++)
     out[k] = tmp[n-1-k];
   out[n] = '\0';
+}
+
+int parseRule(const char *hex, char *rule)
+{
+  char buf[RULE_SIZE/4+1];
+  if(strlen(hex)!=RULE_SIZE/4 || strspn(hex,"0123456789abcdefABCDEF")!=RULE_SIZE/4)
+    return 0;
+  strcpy(buf,hex);
+  memset(rule,'0',RULE_SIZE);
+  hex2bin(buf,rule,RULE_SIZE/4,RULE_SIZE);
+  return 1;
 }
 
 int timeSeed(void)

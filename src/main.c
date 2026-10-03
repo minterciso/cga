@@ -21,11 +21,11 @@ void *start_threads(void *individual)
 
 int main(int argc, char *argv[])
 {
-  //Individual population[POPULATION];
-  ///Individual *population = NULL;
-  Individual population[POPULATION];
+  Individual *population = NULL;
   pthread_t threads[1];
-  int i,j;
+  char hex[RULE_SIZE/4+1];
+  double perf, perfStrict;
+  int i;
 
   switch(parseParams(argc,argv))
   {
@@ -33,23 +33,34 @@ int main(int argc, char *argv[])
     case -1: return EXIT_FAILURE;
   }
   printParams(stderr);
-
   srand(params.seed);
-  /*
-  if((population=(Individual*)malloc(sizeof(Individual)*POPULATION))==NULL)
+
+  //Only evaluate a given rule
+  if(params.validate_hex!=NULL)
   {
-    perror("malloc");
+    char rule[RULE_SIZE];
+    if(!parseRule(params.validate_hex,rule))
+    {
+      fprintf(stderr,"Invalid rule '%s': expected %d hex digits\n",params.validate_hex,RULE_SIZE/4);
+      return EXIT_FAILURE;
+    }
+    validateRule(rule,params.n_ics,&perf,&perfStrict);
+    printf("seed=%u rule=%s nics=%d perf=%.4f perf_strict=%.4f\n",params.seed,params.validate_hex,params.n_ics,perf,perfStrict);
+    return EXIT_SUCCESS;
+  }
+
+  //On the heap: POPULATION individuals are ~1.5MB (~15MB with VALIDATE)
+  if((population=(Individual*)calloc(POPULATION,sizeof(Individual)))==NULL)
+  {
+    perror("calloc");
     return EXIT_FAILURE;
   }
-  */
-  memset(population,'\0',sizeof(Individual)*POPULATION);
   for(i=0;i<POPULATION;i++)
   {
     createRandomLattices(&population[i]);
 #ifdef USE_BEST
     memset(population[i].rule,'0',RULE_SIZE);
     hex2bin(BEST_CGA,population[i].rule,32,RULE_SIZE);
-    population[i].rule[RULE_SIZE]='\0';
 #endif
 #ifndef USE_BEST
     if(params.representation==REP_BINARY)
@@ -63,17 +74,23 @@ int main(int argc, char *argv[])
   }
 
 #ifdef DEBUG
+  int j;
   char fname[FNAME_SIZE];
   memset(fname,'\0',FNAME_SIZE);
   for(i=0;i<POPULATION;i++)
   {
     snprintf(fname,FNAME_SIZE-1,"logs/individual%03d.log",i);
-    FILE *fp = fopen(fname,"w+");
-    fprintf(fp,"Individual %03d\n",i);
+    FILE *dfp = fopen(fname,"w+");
+    if(dfp==NULL)
+    {
+      perror(fname);
+      continue;
+    }
+    fprintf(dfp,"Individual %03d\n",i);
     for(j=0;j<MAX_LATS;j++)
-      fprintf(fp,"Lat %03d(%3d):%s\n",j,population[i].lat[j].density,population[i].lat[j].cells);
-    fprintf(fp,"Rule: %s\n",population[i].rule);
-    fclose(fp);
+      fprintf(dfp,"Lat %03d(%3d):%.*s\n",j,population[i].lat[j].density,LAT_SIZE,population[i].lat[j].cells);
+    fprintf(dfp,"Rule: %.*s\n",RULE_SIZE,population[i].rule);
+    fclose(dfp);
   }
 #endif
 
@@ -81,16 +98,13 @@ int main(int argc, char *argv[])
   for(i=0;i<1;i++)
   {
     population[i].id = i; //Set before the thread starts reading the population
-    pthread_create(&threads[i],NULL,&start_threads,&population);
+    pthread_create(&threads[i],NULL,&start_threads,population);
   }
   for(i=0;i<1;i++)
-  {
     pthread_join(threads[i],NULL);
-//    fprintf(fp,"%d,%s,%d",i,population[POPULATION-1].rule,population[POPULATION-1].fitness);
-  }
 
-  //The population is ranked at the last generation and the elite is never altered
-  //afterwards, so the last individual is the best one found
+  //The population is ranked at the last generation and not altered afterwards,
+  //so the last individual is the best one found
   char rule_dec[RULE_DEC_SIZE];
   Individual *best = &population[POPULATION-1];
   ruleToDecimal(best->rule,rule_dec);
@@ -102,35 +116,22 @@ int main(int argc, char *argv[])
       fprintf(stderr," %.*s",NEIGH_SIZE,best->tpl[i].cells);
     fprintf(stderr,"\n");
   }
-  /*
-  //Call GA (and output to a DB)
-  FILE *fp = fopen("logs/output_db.csv","w+");
-  fprintf(fp,"Iteration,Rule,Fitness\n");
-  //Start threads
-  fprintf(stderr,"Starting threads\n");
-  for(i=0;i<2;i++)
-  {
-    pthread_create(&t_id,NULL,&start_threads,&population[i]);
-    population[i].t_id = t_id;
-    population[i].id=i;
-  }
-  //Join threads
-  for(i=0;i<2;i++)
-  {
-    pthread_join(population[i].t_id,(void**)&population[i]);
-    fprintf(fp,"%d,%s,%d",i,population[POPULATION-1].rule,population[POPULATION-1].fitness);
-  }
-  /*
-  for(i=0;i<1;i++)
-  {
-    evolve(population);
-    fprintf(fp,"%d,%s,%d",i,population[POPULATION-1].rule,population[POPULATION-1].fitness);
-  }
-  
-  fclose(fp);
-  */
-  //free(population);
-  //population=NULL;
 
+  //Final evaluation of the best rule on binomially distributed ICs
+  bin2hex(hex,best->rule,RULE_SIZE/4,RULE_SIZE);
+  hex[RULE_SIZE/4]='\0';
+  validateRule(best->rule,params.n_ics,&perf,&perfStrict);
+#ifdef F_OUTPUT
+  FILE *fp = fopen(F_OUTPUT_FILE,"a");
+  if(fp!=NULL)
+  {
+    fprintf(fp,"Performance:%.4f Strict:%.4f ICs:%d\n",perf,perfStrict,params.n_ics);
+    fclose(fp);
+  }
+#endif
+  printf("seed=%u train_best=%u rule=%s nics=%d perf=%.4f perf_strict=%.4f\n",
+         params.seed,best->fitness,hex,params.n_ics,perf,perfStrict);
+
+  free(population);
   return EXIT_SUCCESS;
 }

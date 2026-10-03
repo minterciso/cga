@@ -1,5 +1,6 @@
 #include "cga.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "consts.h"
@@ -7,58 +8,103 @@
 #include "utils.h"
 #include "params.h"
 #include "templates.h"
+#include "backend.h"
+
+void evaluatePopulation(Individual *pop, Lattice *lat, char *rules)
+{
+  int i,j,fixed;
+
+  for(i=0;i<POPULATION;i++)
+  {
+    if(params.representation!=REP_BINARY)
+      decodeTemplates(&pop[i]);
+    memcpy(&lat[i*MAX_LATS],pop[i].lat,sizeof(Lattice)*MAX_LATS);
+    memcpy(&rules[i*RULE_SIZE],pop[i].rule,RULE_SIZE);
+  }
+  //The whole population in a single backend call
+  runCA(lat,rules,POPULATION*MAX_LATS,MAX_LATS);
+  for(i=0;i<POPULATION;i++)
+  {
+    pop[i].fitness=0;
+    for(j=0;j<MAX_LATS;j++)
+      pop[i].fitness += classify(&lat[i*MAX_LATS+j],pop[i].rule,&fixed);
+  }
+}
+
+void validateRule(const char *rule, int nICs, double *perf, double *perfStrict)
+{
+  int j,ok=0,okStrict=0,fixed=0;
+  Lattice *lat = (Lattice*)malloc(sizeof(Lattice)*nICs);
+  if(lat==NULL)
+  {
+    perror("malloc");
+    exit(EXIT_FAILURE);
+  }
+  createUnbiasedLattices(lat,nICs);
+  runCA(lat,rule,nICs,nICs);
+  for(j=0;j<nICs;j++)
+  {
+    if(classify(&lat[j],rule,&fixed))
+    {
+      ok++;
+      okStrict += fixed;
+    }
+  }
+  *perf       = (double)ok/nICs;
+  *perfStrict = (double)okStrict/nICs;
+  free(lat);
+}
 
 void evolve(Individual *pop)
 {
-  int r,i,j,k,count;
+  int r,i;
   double totFit = 0;
-#ifdef F_OUTPUT
-  FILE *fp = fopen(F_OUTPUT_FILE,"a+");
-#endif
-  for(r=0;r<GA_RUNS;r++)
+  char hex[RULE_SIZE/4+1];
+  FILE *fp = NULL;
+  Lattice *lat = (Lattice*)malloc(sizeof(Lattice)*POPULATION*MAX_LATS);
+  char *rules = (char*)malloc(RULE_SIZE*POPULATION);
+
+  if(lat==NULL || rules==NULL)
   {
-    totFit = 0.0;
+    perror("malloc");
+    exit(EXIT_FAILURE);
+  }
 #ifdef F_OUTPUT
-    fprintf(fp,"Run %3d:",r);
+  if((fp = fopen(F_OUTPUT_FILE,"w+"))==NULL)
+    perror("fopen(" F_OUTPUT_FILE "), the trace will not be written");
+  else
+    fprintf(fp,"Seed:%u\n",params.seed);
 #endif
-    fprintf(stderr,"Run %3d:",r);
+  for(r=0;r<params.generations;r++)
+  {
+    evaluatePopulation(pop,lat,rules);
+    totFit = 0.0;
+    if(fp) fprintf(fp,"Run %3d:",r);
     for(i=0;i<POPULATION;i++)
     {
-      if(params.representation!=REP_BINARY)
-        decodeTemplates(&pop[i]);
-      pop[i].fitness=0;
-      for(j=0;j<MAX_LATS;j++)
-      {
-        count=0;
-        executeCA(&pop[i].lat[j],pop[i].rule,i,pop[i].id);
-        for(k=0;k<LAT_SIZE;k++)
-          if(pop[i].lat[j].cells[k]=='1')
-            count++;
-        if( (pop[i].lat[j].density > LAT_SIZE/2 && count == LAT_SIZE) ||
-            (pop[i].lat[j].density < LAT_SIZE/2 && count == 0) )
-          pop[i].fitness++;
-      }
-#ifdef F_OUTPUT
-      fprintf(fp," %3d ",pop[i].fitness);
-#endif
+      if(fp) fprintf(fp,"%3d ",pop[i].fitness);
       totFit+=(double)pop[i].fitness;
     }
     totFit/=(double)MAX_LATS;
     bubbleSort(pop);
-#ifdef F_OUTPUT
-    fprintf(fp,"[%3d](%.3f%%)\n",pop[POPULATION-1].fitness, totFit);
-    fflush(fp);
-#endif
-    fprintf(stderr,"[%3d](%.3f%%)\n",pop[POPULATION-1].fitness, totFit);
-    if(r==GA_RUNS) return;
+    bin2hex(hex,pop[POPULATION-1].rule,RULE_SIZE/4,RULE_SIZE);
+    hex[RULE_SIZE/4]='\0';
+    if(fp)
+    {
+      fprintf(fp,"(%3d)\nRule:%s\n",pop[POPULATION-1].fitness,hex);
+      fflush(fp);
+    }
+    fprintf(stderr,"Run %3d:[%3d](%.3f%%)\n",r,pop[POPULATION-1].fitness,totFit);
+    //The last generation is only ranked: pop[POPULATION-1] is the best individual found
+    if(r==params.generations-1) break;
     crossOver(pop);
     mutate(pop,POPULATION-CROSS_AMOUNT);
     for(i=0;i<POPULATION;i++)
       createRandomLattices(&pop[i]);
   }
-#ifdef F_OUTPUT
-  fclose(fp);
-#endif
+  if(fp) fclose(fp);
+  free(lat);
+  free(rules);
 }
 
 void crossOver(Individual *pop)
@@ -88,8 +134,9 @@ void crossOver(Individual *pop)
     }while(params.representation!=REP_BINARY && with_tpl>0 && (pop[f1_idx].n_tpl==0 || pop[f2_idx].n_tpl==0));
 
     //Single point crossover with probability p_c, cut point uniform in [1,RULE_SIZE-1].
-    //point=0 means no crossover: the sons are copies of the fathers.
-    if(params.representation==REP_BINARY && uniformDeviate(rand()) < params.cross_rate)
+    //point=0 means no crossover: the sons are copies of the fathers. With p_c=1 no coin is
+    //drawn, so the random sequence is the same as an always-crossing GA (cuCga before p_c).
+    if(params.representation==REP_BINARY && (params.cross_rate>=1.0 || uniformDeviate(rand()) < params.cross_rate))
       point = 1 + uniformDeviate(rand()) * (RULE_SIZE-1);
     else
       point = 0;
@@ -110,7 +157,7 @@ void crossOver(Individual *pop)
 
     //With templates, crossover (probability p_c) swaps one template between the sons
     if(params.representation!=REP_BINARY && son1.n_tpl>0 && son2.n_tpl>0 &&
-       uniformDeviate(rand()) < params.cross_rate)
+       (params.cross_rate>=1.0 || uniformDeviate(rand()) < params.cross_rate))
       swapTemplates(&son1,&son2);
 
     //Set the sons index
@@ -121,9 +168,9 @@ void crossOver(Individual *pop)
     memcpy(&pop[s2_idx],&son2,sizeof(Individual));
 #ifdef DEBUG
     fprintf(fp,"Selecting %d(%d) and %d(%d) as fathers.\n",f1_idx,fat1.fitness, f2_idx,fat2.fitness);
-    fprintf(fp,"f1:%s\nf2:%s\n",fat1.rule,fat2.rule);
+    fprintf(fp,"f1:%.*s\nf2:%.*s\n",RULE_SIZE,fat1.rule,RULE_SIZE,fat2.rule);
     fprintf(fp,"Point:%d\n",point);
-    fprintf(fp,"s1:%s\ns2:%s\n",son1.rule,son2.rule);
+    fprintf(fp,"s1:%.*s\ns2:%.*s\n",RULE_SIZE,son1.rule,RULE_SIZE,son2.rule);
 #endif
   }
 #ifdef DEBUG
