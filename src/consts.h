@@ -67,9 +67,11 @@
 #define BEST_CGA "0504058605000f77037755877bffb77f"
 //#define BEST_CGA "100111215030114d01613507143b05bf"
 
-//File output
+//File output: per-generation trace, written by evolve() only (single writer)
 #define F_OUTPUT
 #define F_OUTPUT_FILE "logs/output.log"
-#undef F_OUTPUT //NEED TO BE THREAD SAFE
+
+//Final evaluation of the best rule (MCH/CMD): binomially distributed ICs
+#define DEFAULT_N_ICS 10000
 
 #endif //__CONSTS_H

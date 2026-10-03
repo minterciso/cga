@@ -20,6 +20,8 @@ typedef struct Params
   int t_max;                     //Maximum initial templates per individual [0,MAX_TEMPLATES]
   double hash_prob;              //Probability of '#' in each template cell [0,1]
   unsigned int seed;             //srand() seed; taken from the clock unless --seed is given
+  int n_ics;                     //Binomial ICs for the final evaluation of a rule
+  const char *validate_hex;      //When set, only evaluate this rule (hex, MCH order), no GA
 }Params;
 
 extern Params params;

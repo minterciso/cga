@@ -30,4 +30,16 @@ Mutation rate, crossover rate, rule representation and random seed are runtime o
 
 Run the tests with `ctest --test-dir build`.
 
+At the end of a run the best rule is evaluated on `--ics` (default 10⁴) unbiased ICs, each cell 1 with probability 0.5, as in the final evaluation of MCH/CMD. The last stdout line is
+
+```
+seed=42 train_best=62 rule=04de8db7fb77f5cbf66fcabfdfabd5ff nics=10000 perf=0.5048 perf_strict=0.5048
+```
+
+with the rule in hex, neighbourhood `0000000` first (MCH/CMD order). `perf` counts a uniform correct lattice after the last step; `perf_strict` also requires that state to be a fixed point of the rule. `./build/cga --validate <hex>` evaluates a given rule without running the GA. The per-generation trace goes to `logs/output.log` (create `logs/` first).
+
+## CPU and GPU versions
+
+[cuCGA](https://github.com/minterciso/cuCGA) is the CUDA version of this GA. Both share the same host code; only the CA backend differs (`src/backend_cpu.c` here, `src/kernel.cu` there, behind `src/backend.h`). For the same seed and options the two programs produce the same run, generation by generation.
+
 The other compile-time switches (`DEBUG`, `VALIDATE`, `USE_BEST`, `F_OUTPUT`) live in `src/consts.h`. With `DEBUG` enabled the program writes into `logs/` relative to the working directory, so create it first.
