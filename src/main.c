@@ -32,8 +32,8 @@ int main(int argc, char *argv[])
     case -1: return EXIT_FAILURE;
   }
   printParams(stderr);
-  if(params.mode==3)
-    fprintf(stderr,"Warning: mode 3 puts '2' symbols in the rule, which the CA copies into the lattice; "
+  if(params.n_symbols==3)
+    fprintf(stderr,"Warning: 3 symbols puts '2' symbols in the rule, which the CA copies into the lattice; "
                    "this is not the template-based ternary representation and will most likely abort.\n");
 
   srand(params.seed);

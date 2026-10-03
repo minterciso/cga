@@ -126,9 +126,9 @@ void mutate(Individual *pop, size_t amount)
       rnd = uniformDeviate(rand());
       if(rnd < params.mut_rate)
       {
-        //Change to one of the other (mode-1) symbols, uniformly; a plain flip in binary mode
-        int shift = 1 + (int)(uniformDeviate(rand())*(params.mode-1));
-        pop[i].rule[j] = '0' + ((pop[i].rule[j]-'0') + shift) % params.mode;
+        //Change to one of the other (n_symbols-1) symbols, uniformly; a plain flip when binary
+        int shift = 1 + (int)(uniformDeviate(rand())*(params.n_symbols-1));
+        pop[i].rule[j] = '0' + ((pop[i].rule[j]-'0') + shift) % params.n_symbols;
       }
     }
   }

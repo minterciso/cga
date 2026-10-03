@@ -7,7 +7,7 @@
 #include "consts.h"
 #include "utils.h"
 
-Params params = { DEFAULT_MUT_RATE, DEFAULT_CROSS_RATE, DEFAULT_MODE, 0 };
+Params params = { DEFAULT_MUT_RATE, DEFAULT_CROSS_RATE, DEFAULT_N_SYMBOLS, 0 };
 
 static void usage(FILE *stream, const char *prog)
 {
@@ -16,10 +16,10 @@ static void usage(FILE *stream, const char *prog)
           "  -m, --mutation-rate R   per-bit mutation probability in [0,1] (default %g)\n"
           "  -c, --crossover-rate R  single point crossover probability p_c in [0,1]\n"
           "                          (default %g; MCH uses 0.8, CMD 1.0)\n"
-          "  -M, --mode N            rule symbols: 2 = binary, 3 = ternary (default %d)\n"
+          "  -n, --symbols N         number of rule symbols: 2 = binary, 3 = ternary (default %d)\n"
           "  -s, --seed N            random seed, 0..%u (default: derived from the clock)\n"
           "  -h, --help              show this help\n",
-          prog, DEFAULT_MUT_RATE, DEFAULT_CROSS_RATE, DEFAULT_MODE, UINT_MAX);
+          prog, DEFAULT_MUT_RATE, DEFAULT_CROSS_RATE, DEFAULT_N_SYMBOLS, UINT_MAX);
 }
 
 static int parseDouble(const char *s, double min, double max, double *out)
@@ -52,7 +52,7 @@ int parseParams(int argc, char *argv[])
   {
     {"mutation-rate",  required_argument, NULL, 'm'},
     {"crossover-rate", required_argument, NULL, 'c'},
-    {"mode",           required_argument, NULL, 'M'},
+    {"symbols",        required_argument, NULL, 'n'},
     {"seed",           required_argument, NULL, 's'},
     {"help",           no_argument,       NULL, 'h'},
     {NULL, 0, NULL, 0}
@@ -61,7 +61,7 @@ int parseParams(int argc, char *argv[])
   int seed_set = 0;
   double v;
 
-  while((opt = getopt_long(argc, argv, "m:c:M:s:h", opts, NULL)) != -1)
+  while((opt = getopt_long(argc, argv, "m:c:n:s:h", opts, NULL)) != -1)
   {
     switch(opt)
     {
@@ -79,13 +79,13 @@ int parseParams(int argc, char *argv[])
           return -1;
         }
         break;
-      case 'M':
+      case 'n':
         if(parseDouble(optarg, 2.0, 3.0, &v) != 0 || (v != 2.0 && v != 3.0))
         {
-          fprintf(stderr, "Invalid mode '%s': expected 2 or 3\n", optarg);
+          fprintf(stderr, "Invalid number of symbols '%s': expected 2 or 3\n", optarg);
           return -1;
         }
-        params.mode = (int)v;
+        params.n_symbols = (int)v;
         break;
       case 's':
         if(parseUInt(optarg, &params.seed) != 0)
@@ -116,6 +116,6 @@ int parseParams(int argc, char *argv[])
 
 void printParams(FILE *stream)
 {
-  fprintf(stream, "mutation-rate=%g crossover-rate=%g mode=%d seed=%u\n",
-          params.mut_rate, params.cross_rate, params.mode, params.seed);
+  fprintf(stream, "mutation-rate=%g crossover-rate=%g symbols=%d seed=%u\n",
+          params.mut_rate, params.cross_rate, params.n_symbols, params.seed);
 }

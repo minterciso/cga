@@ -47,14 +47,14 @@
 #define GA_RUNS 100
 
 //GA Probabilities (and elitism amount)
-//Crossover rate, mutation rate and mode are runtime parameters (see params.h);
+//Crossover rate, mutation rate and number of symbols are runtime parameters (see params.h);
 //these are only their defaults.
 #define CROSS_AMOUNT 20
 #define DEFAULT_CROSS_RATE 1.0  //CMD: p_c = 100% (MCH uses 0.8)
 #define DEFAULT_MUT_RATE 0.016 //CMD: 1.6% per bit, ~2 bits per individual
 
-//Define the mode we are studying (binary or ternary representation)
-#define DEFAULT_MODE 2
+//Number of rule symbols: 2 = binary, 3 = ternary representation
+#define DEFAULT_N_SYMBOLS 2
 
 //Best rule found in original CGA paper
 //#define USE_BEST

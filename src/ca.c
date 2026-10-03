@@ -46,7 +46,7 @@ void createRandomRules(Individual *ind)
   ind->rule[RULE_SIZE-1]='\0';
   for(i=0;i<RULE_SIZE;i++)
   {
-    rnd = uniformDeviate(rand())*params.mode;
+    rnd = uniformDeviate(rand())*params.n_symbols;
     switch(rnd)
     {
       case 0:ind->rule[i]='0';break;
