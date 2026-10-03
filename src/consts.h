@@ -56,6 +56,7 @@
 #define CROSS_AMOUNT 20
 #define DEFAULT_CROSS_RATE 1.0  //CMD: p_c = 100% (MCH uses 0.8)
 #define DEFAULT_MUT_RATE 0.016 //CMD: 1.6% per bit, ~2 bits per individual
+#define DEFAULT_TPL_MUT_RATE 0.064 //Templates: ~2 mutations per individual at t_max=9 (4.5 templates * 7 cells)
 
 //Rule representation and template parameters (see params.h)
 #define DEFAULT_T_MAX 9

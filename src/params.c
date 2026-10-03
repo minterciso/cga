@@ -16,7 +16,8 @@ static void usage(FILE *stream, const char *prog)
 {
   fprintf(stream,
           "Usage: %s [options]\n"
-          "  -m, --mutation-rate R   per-symbol mutation probability in [0,1] (default %g)\n"
+          "  -m, --mutation-rate R   per-symbol mutation probability in [0,1]\n"
+          "                          (default %g for binary, %g for single/double)\n"
           "  -c, --crossover-rate R  crossover probability p_c in [0,1]\n"
           "                          (default %g; MCH uses 0.8, CMD 1.0)\n"
           "  -r, --representation S  binary, single or double (default binary).\n"
@@ -28,7 +29,7 @@ static void usage(FILE *stream, const char *prog)
           "                          (default %g)\n"
           "  -s, --seed N            random seed, 0..%u (default: derived from the clock)\n"
           "  -h, --help              show this help\n",
-          prog, DEFAULT_MUT_RATE, DEFAULT_CROSS_RATE, MAX_TEMPLATES, DEFAULT_T_MAX, DEFAULT_HASH_PROB, UINT_MAX);
+          prog, DEFAULT_MUT_RATE, DEFAULT_TPL_MUT_RATE, DEFAULT_CROSS_RATE, MAX_TEMPLATES, DEFAULT_T_MAX, DEFAULT_HASH_PROB, UINT_MAX);
 }
 
 static int parseDouble(const char *s, double min, double max, double *out)
@@ -70,6 +71,7 @@ int parseParams(int argc, char *argv[])
   };
   int opt,i;
   int seed_set = 0;
+  int mut_set = 0;
   unsigned int u;
 
   while((opt = getopt_long(argc, argv, "m:c:r:t:p:s:h", opts, NULL)) != -1)
@@ -82,6 +84,7 @@ int parseParams(int argc, char *argv[])
           fprintf(stderr, "Invalid mutation rate '%s': expected a number in [0,1]\n", optarg);
           return -1;
         }
+        mut_set = 1;
         break;
       case 'c':
         if(parseDouble(optarg, 0.0, 1.0, &params.cross_rate) != 0)
@@ -136,6 +139,8 @@ int parseParams(int argc, char *argv[])
     usage(stderr, argv[0]);
     return -1;
   }
+  if(!mut_set && params.representation != REP_BINARY)
+    params.mut_rate = DEFAULT_TPL_MUT_RATE;
   if(!seed_set)
     params.seed = (unsigned int)timeSeed();
   return 0;
