@@ -18,10 +18,10 @@ cmake --build build
 ./build/cga
 ```
 
-Mutation rate, crossover rate and mode are runtime options:
+Mutation rate, crossover rate, mode and random seed are runtime options. The seed in use is printed at startup, so any run can be repeated:
 
 ```sh
-./build/cga --mutation-rate 0.016 --crossover-rate 10 --mode 2
+./build/cga --mutation-rate 0.016 --crossover-rate 1.0 --mode 2 --seed 42
 ./build/cga --help
 ```
 

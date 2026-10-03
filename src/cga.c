@@ -64,7 +64,7 @@ void crossOver(Individual *pop)
   int f1_idx,f2_idx,s1_idx,s2_idx;
   int rest = (POPULATION-1)-CROSS_AMOUNT;
   int point = 0; //Crossover point
-  int i,j,k;
+  int i,k;
 #ifdef DEBUG
   FILE *fp = fopen("logs/crossover.log","w+");
   fprintf(fp,"Crossing over...\n");
@@ -76,19 +76,20 @@ void crossOver(Individual *pop)
     f1_idx = rest + uniformDeviate(rand()) * (POPULATION - rest);
     f2_idx = rest + uniformDeviate(rand()) * (POPULATION - rest);
 
-    //Select the crossover point
-    for(j=0;j<RULE_SIZE;j++)
-    {
-      if( (uniformDeviate(rand()) * 100) < params.cross_rate )
-      {
-        point = j;
-        break;
-      }
-    }
+    //Single point crossover with probability p_c, cut point uniform in [1,RULE_SIZE-1].
+    //point=0 means no crossover: the sons are copies of the fathers.
+    if(uniformDeviate(rand()) < params.cross_rate)
+      point = 1 + uniformDeviate(rand()) * (RULE_SIZE-1);
+    else
+      point = 0;
 
     //Copy fathers to a temp variable
     memcpy(&fat1,&pop[f1_idx],sizeof(Individual));
     memcpy(&fat2,&pop[f2_idx],sizeof(Individual));
+
+    //Sons start as copies of the fathers, so no field is left uninitialized
+    memcpy(&son1,&fat1,sizeof(Individual));
+    memcpy(&son2,&fat2,sizeof(Individual));
 
     //Finnaly, cross the genomes
     memcpy(&son1.rule,       &fat2.rule,       point);

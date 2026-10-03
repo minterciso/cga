@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     fprintf(stderr,"Warning: mode 3 puts '2' symbols in the rule, which the CA copies into the lattice; "
                    "this is not the template-based ternary representation and will most likely abort.\n");
 
-  srand(timeSeed());
+  srand(params.seed);
   /*
   if((population=(Individual*)malloc(sizeof(Individual)*POPULATION))==NULL)
   {

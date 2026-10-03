@@ -50,7 +50,7 @@
 //Crossover rate, mutation rate and mode are runtime parameters (see params.h);
 //these are only their defaults.
 #define CROSS_AMOUNT 20
-#define DEFAULT_CROSS_RATE 10.0
+#define DEFAULT_CROSS_RATE 1.0  //CMD: p_c = 100% (MCH uses 0.8)
 #define DEFAULT_MUT_RATE 0.016 //CMD: 1.6% per bit, ~2 bits per individual
 
 //Define the mode we are studying (binary or ternary representation)

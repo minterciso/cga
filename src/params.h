@@ -8,8 +8,9 @@
 typedef struct Params
 {
   double mut_rate;   //Per-bit mutation probability [0,1]
-  double cross_rate; //Per-position chance (%) of stopping the crossover point search [0,100]
+  double cross_rate; //Single point crossover probability p_c [0,1]
   int mode;          //Number of rule symbols: 2 (binary) or 3 (ternary)
+  unsigned int seed; //srand() seed; taken from the clock unless --seed is given
 }Params;
 
 extern Params params;
