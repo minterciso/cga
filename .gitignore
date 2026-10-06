@@ -1,5 +1,6 @@
+CEC*.pdf
 build/
 config.log
 .venv/
 __pycache__/
-results/**/runs/
+results/
