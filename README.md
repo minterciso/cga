@@ -1,6 +1,8 @@
 # Introduction
 
-In here you'll find the actual source code that was used to examine and find the solutions for the DCT in a 2 dimensional CA via GA. The paper regarding this solution can be found [https://ieeexplore.ieee.org/document/5949850](here).
+In here you'll find the actual source code that was used to examine and find the solutions for the DCT in a 2 dimensional CA via GA. The paper regarding this solution can be found [https://ieeexplore.ieee.org/document/5949850](here). As well as improvements on the same paper and GA.
+
+> **Paper version.** The code published for the paper is tagged [`cec2011-paper`](https://github.com/minterciso/cga/tree/cec2011-paper) (commit `7ef645b`). Later commits fix bugs found in that version, move the build to CMake and add options, so results produced with later commits are not directly comparable with the paper's.
 
 Since the code is pretty old (circa 2011), and wasn't really touched a lot since then, you may find some different results. This is expected and to be updated both here, and on my [https://github.com/minterciso/cuCGA](CUDA) port of the same GA.
 
