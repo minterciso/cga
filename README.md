@@ -52,18 +52,9 @@ with the rule in hex, neighborhood `0000000` first (MCH/CMD order). `perf` count
 
 The other compile-time switches (`DEBUG`, `VALIDATE`, `USE_BEST`, `F_OUTPUT`) live in `src/consts.h`. With `DEBUG` enabled the program writes into `logs/` relative to the working directory, so create it first.
 
-## Plots
+## Running experiments
 
-The plotting tools run in a project-local Python virtual environment, so nothing is installed in the system Python:
-
-```sh
-scripts/setup_venv.sh                       # creates .venv and installs requirements.txt
-.venv/bin/python scripts/plot_evolution.py run evolution.csv -o evolution.png \
-    --stdout stdout.txt --stderr stderr.txt   # one run (CSV from --csv)
-.venv/bin/python scripts/plot_evolution.py experiment results/<dir>   # several runs
-```
-
-`scripts/run_experiment.sh -n RUNS [-a "GA options"]` runs RUNS seeds (e.g. `-a "-r single -g 200"`) and, when `.venv` exists, draws `evolution.png` for every run and one for the whole experiment (median and quartiles across runs, plus the final binomial performance in the bins of Table V of the paper); `-x` skips the plots. The curves are **training** fitness (each individual on its own random ICs), which predicts the final binomial performance poorly; that performance is shown separately (★ on the per-run plot).
+`scripts/run_experiment.sh -n RUNS [-s FIRST_SEED] [-a "GA options"]` runs RUNS consecutive seeds (e.g. `-a "-r single -g 200"`), one process per seed, and collects each run's final line in `results.csv`, its per-generation statistics (`--csv`) and its logs in its own folder, with a `manifest.txt` recording the binary, the environment and the effective GA parameters. Analysis and plotting tools are not part of this repository.
 
 ## CPU and GPU versions
 
